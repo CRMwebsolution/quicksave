@@ -225,14 +225,14 @@ export async function textToPdf(text: string, paper: PaperTheme): Promise<Blob> 
   const margin = 54 * PDF_SCALE;
   const fontSize = 11 * PDF_SCALE;
   const lineHeight = 15 * PDF_SCALE;
-  const usableBottom = height - margin;
+  const contentBottom = height - margin;
   const maxWidth = width - margin * 2;
 
   const measure = createPageCanvas(width, height, colors.bg).getContext("2d");
   if (!measure) throw new Error("Canvas is not available");
   measure.font = `${fontSize}px "IBM Plex Mono", ui-monospace, monospace`;
   const lines = wrapLines(measure, text || " ", maxWidth);
-  const linesPerPage = Math.max(1, Math.floor((usableBottom - margin) / lineHeight));
+  const linesPerPage = Math.max(1, Math.floor((contentBottom - margin) / lineHeight));
   const pageCount = Math.max(1, Math.ceil(lines.length / linesPerPage));
 
   const pages: { jpeg: Uint8Array; width: number; height: number }[] = [];
@@ -253,7 +253,6 @@ export async function textToPdf(text: string, paper: PaperTheme): Promise<Blob> 
 
   return jpegsToPdf(pages);
 }
-
 
 export async function imageToPdf(image: HTMLImageElement, paper: PaperTheme): Promise<Blob> {
   const colors = PAPER[paper];
