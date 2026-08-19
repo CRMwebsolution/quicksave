@@ -57,7 +57,7 @@ async function encodeBlob(input: ExportInput): Promise<Blob> {
 
   switch (format.kind) {
     case "pdf":
-      return textToPdf(text, paper, input.name);
+      return textToPdf(text, paper);
     case "svg":
       return textToSvg(text, paper);
     case "raster":
@@ -217,7 +217,7 @@ async function blobToUint8(blob: Blob): Promise<Uint8Array> {
   return new Uint8Array(await blob.arrayBuffer());
 }
 
-export async function textToPdf(text: string, paper: PaperTheme, title = "untitled"): Promise<Blob> {
+export async function textToPdf(text: string, paper: PaperTheme): Promise<Blob> {
   await waitForFonts();
   const colors = PAPER[paper];
   const width = LETTER_W * PDF_SCALE;
@@ -225,8 +225,7 @@ export async function textToPdf(text: string, paper: PaperTheme, title = "untitl
   const margin = 54 * PDF_SCALE;
   const fontSize = 11 * PDF_SCALE;
   const lineHeight = 15 * PDF_SCALE;
-  const footerY = height - 28 * PDF_SCALE;
-  const usableBottom = footerY - 16 * PDF_SCALE;
+  const usableBottom = height - margin;
   const maxWidth = width - margin * 2;
 
   const measure = createPageCanvas(width, height, colors.bg).getContext("2d");
@@ -248,12 +247,6 @@ export async function textToPdf(text: string, paper: PaperTheme, title = "untitl
     slice.forEach((line, i) => {
       ctx.fillText(line, margin, margin + i * lineHeight);
     });
-    ctx.font = `${9 * PDF_SCALE}px "IBM Plex Mono", ui-monospace, monospace`;
-    ctx.fillStyle = colors.muted;
-    ctx.textAlign = "right";
-    ctx.fillText(`${p + 1} / ${pageCount}`, width - margin, footerY);
-    ctx.textAlign = "left";
-    ctx.fillText(sanitizePdfLabel(title), margin, footerY);
     const jpeg = await canvasToBlob(canvas, "image/jpeg", 0.92);
     pages.push({ jpeg: await blobToUint8(jpeg), width, height });
   }
@@ -261,9 +254,6 @@ export async function textToPdf(text: string, paper: PaperTheme, title = "untitl
   return jpegsToPdf(pages);
 }
 
-function sanitizePdfLabel(name: string): string {
-  return name.replace(/\.[a-z0-9]+$/i, "").slice(0, 40) || "untitled";
-}
 
 export async function imageToPdf(image: HTMLImageElement, paper: PaperTheme): Promise<Blob> {
   const colors = PAPER[paper];
